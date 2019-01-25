@@ -30,11 +30,13 @@ set(ONNX_VERSION 1.3.0)
 set(ONNX_GIT_REPO_URL https://github.com/onnx/onnx.git)
 set(ONNX_GIT_BRANCH rel-${ONNX_VERSION})
 
-# The 'BUILD_BYPRODUCTS' arguments was introduced in CMake 3.2.
-if (${CMAKE_VERSION} VERSION_LESS 3.2)
-    ExternalProject_Add(
+# Winodows use different name conversion from Linux
+if (MSVS)
+    # To speed things up prefer 'shallow copy' for CMake 3.6 and later
+    if (${CMAKE_VERSION} VERSION_LESS 3.6)
+        ExternalProject_Add(
             ext_onnx
-            PREFIX onnx
+            PREFIX ext_onnx
             GIT_REPOSITORY ${ONNX_GIT_REPO_URL}
             GIT_TAG ${ONNX_GIT_BRANCH}
             INSTALL_COMMAND ""
@@ -43,91 +45,152 @@ if (${CMAKE_VERSION} VERSION_LESS 3.2)
             CMAKE_GENERATOR_PLATFORM ${CMAKE_GENERATOR_PLATFORM}
             CMAKE_GENERATOR_TOOLSET ${CMAKE_GENERATOR_TOOLSET}
             CMAKE_ARGS ${NGRAPH_FORWARD_CMAKE_ARGS}
-                       -DONNX_GEN_PB_TYPE_STUBS=OFF
-                       -DProtobuf_PROTOC_EXECUTABLE=${Protobuf_PROTOC_EXECUTABLE}
-                       -DProtobuf_INCLUDE_DIR=${Protobuf_INCLUDE_DIR}
-                       -DPROTOBUF_LIBRARY=${Protobuf_LIBRARY}
-                       -DPROTOBUF_INCLUDE_DIR=${Protobuf_INCLUDE_DIR}
-                       -DPROTOBUF_SRC_ROOT_FOLDER=${Protobuf_SRC_ROOT_FOLDER}
-                       -DONNX_ML=TRUE
+                    -DONNX_GEN_PB_TYPE_STUBS=OFF
+                    -DProtobuf_PROTOC_EXECUTABLE=${Protobuf_PROTOC_EXECUTABLE}
+                    -DProtobuf_LIBRARY=${Protobuf_LIBRARY}
+                    -DProtobuf_INCLUDE_DIR=${Protobuf_INCLUDE_DIR}
+                    -DONNX_ML=TRUE
+            COMPILE_DEFINITIONS PROTOBUF_USE_DLLS
             TMP_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/tmp"
             STAMP_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/stamp"
             DOWNLOAD_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/download"
             SOURCE_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/src"
-            BINARY_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/bin"
+            BINARY_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/build"
             INSTALL_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx"
             EXCLUDE_FROM_ALL TRUE
-    )
-else()
-    if (${CMAKE_VERSION} VERSION_LESS 3.6)
-        ExternalProject_Add(
-                ext_onnx
-                PREFIX ext_onnx
-                GIT_REPOSITORY ${ONNX_GIT_REPO_URL}
-                GIT_TAG ${ONNX_GIT_BRANCH}
-                INSTALL_COMMAND ""
-                UPDATE_COMMAND ""
-                CMAKE_GENERATOR ${CMAKE_GENERATOR}
-                CMAKE_GENERATOR_PLATFORM ${CMAKE_GENERATOR_PLATFORM}
-                CMAKE_GENERATOR_TOOLSET ${CMAKE_GENERATOR_TOOLSET}
-                CMAKE_ARGS ${NGRAPH_FORWARD_CMAKE_ARGS}
-                           -DONNX_GEN_PB_TYPE_STUBS=OFF
-                           -DProtobuf_PROTOC_EXECUTABLE=${Protobuf_PROTOC_EXECUTABLE}
-                           -DProtobuf_INCLUDE_DIR=${Protobuf_INCLUDE_DIR}
-                           -DPROTOBUF_LIBRARY=${Protobuf_LIBRARY}
-                           -DPROTOBUF_INCLUDE_DIR=${Protobuf_INCLUDE_DIR}
-                           -DPROTOBUF_SRC_ROOT_FOLDER=${Protobuf_SRC_ROOT_FOLDER}
-                           -DONNX_ML=TRUE
-                TMP_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/tmp"
-                STAMP_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/stamp"
-                DOWNLOAD_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/download"
-                SOURCE_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/src"
-                BINARY_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/bin"
-                INSTALL_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx"
-                BUILD_BYPRODUCTS ${EXTERNAL_PROJECTS_ROOT}/onnx/bin/libonnx_proto.a
-                                 ${EXTERNAL_PROJECTS_ROOT}/onnx/bin/libonnx.a
-                EXCLUDE_FROM_ALL TRUE
         )
     else()
         # To speed things up prefer 'shallow copy' for CMake 3.6 and later
         ExternalProject_Add(
+            ext_onnx
+            PREFIX ext_onnx
+            GIT_REPOSITORY ${ONNX_GIT_REPO_URL}
+            GIT_TAG ${ONNX_GIT_BRANCH}
+            GIT_SHALLOW TRUE
+            INSTALL_COMMAND ""
+            UPDATE_COMMAND ""
+            CMAKE_GENERATOR ${CMAKE_GENERATOR}
+            CMAKE_GENERATOR_PLATFORM ${CMAKE_GENERATOR_PLATFORM}
+            CMAKE_GENERATOR_TOOLSET ${CMAKE_GENERATOR_TOOLSET}
+            CMAKE_ARGS ${NGRAPH_FORWARD_CMAKE_ARGS}
+                    -DONNX_GEN_PB_TYPE_STUBS=OFF
+                    -DProtobuf_PROTOC_EXECUTABLE=${Protobuf_PROTOC_EXECUTABLE}
+                    -DProtobuf_LIBRARY=${Protobuf_LIBRARY}
+                    -DProtobuf_INCLUDE_DIR=${Protobuf_INCLUDE_DIR}
+                    -DONNX_ML=TRUE
+            TMP_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/tmp"
+            STAMP_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/stamp"
+            DOWNLOAD_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/download"
+            SOURCE_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/src"
+            BINARY_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/build"
+            INSTALL_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx"
+            EXCLUDE_FROM_ALL TRUE
+        )
+    endif()
+else()
+    # The 'BUILD_BYPRODUCTS' arguments was introduced in CMake 3.2.
+    if (${CMAKE_VERSION} VERSION_LESS 3.2)
+        ExternalProject_Add(
                 ext_onnx
                 PREFIX ext_onnx
                 GIT_REPOSITORY ${ONNX_GIT_REPO_URL}
                 GIT_TAG ${ONNX_GIT_BRANCH}
-                GIT_SHALLOW TRUE
                 INSTALL_COMMAND ""
                 UPDATE_COMMAND ""
                 CMAKE_GENERATOR ${CMAKE_GENERATOR}
                 CMAKE_GENERATOR_PLATFORM ${CMAKE_GENERATOR_PLATFORM}
                 CMAKE_GENERATOR_TOOLSET ${CMAKE_GENERATOR_TOOLSET}
                 CMAKE_ARGS ${NGRAPH_FORWARD_CMAKE_ARGS}
-                           -DONNX_GEN_PB_TYPE_STUBS=OFF
-                           -DProtobuf_PROTOC_EXECUTABLE=${Protobuf_PROTOC_EXECUTABLE}
-                           -DProtobuf_LIBRARY=${Protobuf_LIBRARY}
-                           -DProtobuf_INCLUDE_DIR=${Protobuf_INCLUDE_DIR}
-                           -DONNX_ML=TRUE
+                        -DONNX_GEN_PB_TYPE_STUBS=OFF
+                        -DProtobuf_PROTOC_EXECUTABLE=${Protobuf_PROTOC_EXECUTABLE}
+                        -DProtobuf_INCLUDE_DIR=${Protobuf_INCLUDE_DIR}
+                        -DPROTOBUF_LIBRARY=${Protobuf_LIBRARY}
+                        -DPROTOBUF_INCLUDE_DIR=${Protobuf_INCLUDE_DIR}
+                        -DPROTOBUF_SRC_ROOT_FOLDER=${Protobuf_SRC_ROOT_FOLDER}
+                        -DONNX_ML=TRUE
                 TMP_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/tmp"
                 STAMP_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/stamp"
                 DOWNLOAD_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/download"
                 SOURCE_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/src"
                 BINARY_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/bin"
                 INSTALL_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx"
-                BUILD_BYPRODUCTS ${EXTERNAL_PROJECTS_ROOT}/onnx/bin/libonnx_proto.a
-                                 ${EXTERNAL_PROJECTS_ROOT}/onnx/bin/libonnx.a
                 EXCLUDE_FROM_ALL TRUE
         )
+    else()
+        if (${CMAKE_VERSION} VERSION_LESS 3.6)
+            ExternalProject_Add(
+                    ext_onnx
+                    PREFIX ext_onnx
+                    GIT_REPOSITORY ${ONNX_GIT_REPO_URL}
+                    GIT_TAG ${ONNX_GIT_BRANCH}
+                    INSTALL_COMMAND ""
+                    UPDATE_COMMAND ""
+                    CMAKE_GENERATOR ${CMAKE_GENERATOR}
+                    CMAKE_GENERATOR_PLATFORM ${CMAKE_GENERATOR_PLATFORM}
+                    CMAKE_GENERATOR_TOOLSET ${CMAKE_GENERATOR_TOOLSET}
+                    CMAKE_ARGS ${NGRAPH_FORWARD_CMAKE_ARGS}
+                            -DONNX_GEN_PB_TYPE_STUBS=OFF
+                            -DProtobuf_PROTOC_EXECUTABLE=${Protobuf_PROTOC_EXECUTABLE}
+                            -DProtobuf_INCLUDE_DIR=${Protobuf_INCLUDE_DIR}
+                            -DPROTOBUF_LIBRARY=${Protobuf_LIBRARY}
+                            -DPROTOBUF_INCLUDE_DIR=${Protobuf_INCLUDE_DIR}
+                            -DPROTOBUF_SRC_ROOT_FOLDER=${Protobuf_SRC_ROOT_FOLDER}
+                            -DONNX_ML=TRUE
+                    TMP_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/tmp"
+                    STAMP_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/stamp"
+                    DOWNLOAD_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/download"
+                    SOURCE_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/src"
+                    BINARY_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/bin"
+                    INSTALL_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx"
+                    BUILD_BYPRODUCTS ${EXTERNAL_PROJECTS_ROOT}/onnx/bin/libonnx_proto.a
+                                    ${EXTERNAL_PROJECTS_ROOT}/onnx/bin/libonnx.a
+                    EXCLUDE_FROM_ALL TRUE
+            )
+        else()
+            # To speed things up prefer 'shallow copy' for CMake 3.6 and later
+            ExternalProject_Add(
+                    ext_onnx
+                    PREFIX ext_onnx
+                    GIT_REPOSITORY ${ONNX_GIT_REPO_URL}
+                    GIT_TAG ${ONNX_GIT_BRANCH}
+                    GIT_SHALLOW TRUE
+                    INSTALL_COMMAND ""
+                    UPDATE_COMMAND ""
+                    CMAKE_GENERATOR ${CMAKE_GENERATOR}
+                    CMAKE_GENERATOR_PLATFORM ${CMAKE_GENERATOR_PLATFORM}
+                    CMAKE_GENERATOR_TOOLSET ${CMAKE_GENERATOR_TOOLSET}
+                    CMAKE_ARGS ${NGRAPH_FORWARD_CMAKE_ARGS}
+                            -DONNX_GEN_PB_TYPE_STUBS=OFF
+                            -DProtobuf_PROTOC_EXECUTABLE=${Protobuf_PROTOC_EXECUTABLE}
+                            -DProtobuf_LIBRARY=${Protobuf_LIBRARY}
+                            -DProtobuf_INCLUDE_DIR=${Protobuf_INCLUDE_DIR}
+                            -DONNX_ML=TRUE
+                    TMP_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/tmp"
+                    STAMP_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/stamp"
+                    DOWNLOAD_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/download"
+                    SOURCE_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/src"
+                    BINARY_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx/bin"
+                    INSTALL_DIR "${EXTERNAL_PROJECTS_ROOT}/onnx"
+                    BUILD_BYPRODUCTS ${EXTERNAL_PROJECTS_ROOT}/onnx/bin/libonnx_proto.a
+                                    ${EXTERNAL_PROJECTS_ROOT}/onnx/bin/libonnx.a
+                    EXCLUDE_FROM_ALL TRUE
+            )
+        endif()
     endif()
 endif()
-
 # -----------------------------------------------------------------------------
 
 ExternalProject_Get_Property(ext_onnx SOURCE_DIR BINARY_DIR)
 
 set(ONNX_INCLUDE_DIR ${SOURCE_DIR}/onnx)
 set(ONNX_PROTO_INCLUDE_DIR ${BINARY_DIR}/onnx)
-set(ONNX_LIBRARY ${BINARY_DIR}/libonnx.a)
-set(ONNX_PROTO_LIBRARY ${BINARY_DIR}/libonnx_proto.a)
+if (WIN32)
+    set(ONNX_LIBRARY ${BINARY_DIR}/${CMAKE_CFG_INTDIR}/onnx.lib)
+    set(ONNX_PROTO_LIBRARY ${BINARY_DIR}/${CMAKE_CFG_INTDIR}/onnx_proto.lib)
+else()
+    set(ONNX_LIBRARY ${BINARY_DIR}/libonnx.a)
+    set(ONNX_PROTO_LIBRARY ${BINARY_DIR}/libonnx_proto.a)
+endif()
 set(ONNX_LIBRARIES ${ONNX_LIBRARY} ${ONNX_PROTO_LIBRARY})
 
 if (NOT TARGET onnx::libonnx)
@@ -138,7 +201,7 @@ if (NOT TARGET onnx::libonnx)
     add_dependencies(onnx::libonnx ext_onnx)
 endif()
 
-if (NOT TARGET onnnx::libonnx_proto)
+if (NOT TARGET onnx::libonnx_proto)
     add_library(onnx::libonnx_proto UNKNOWN IMPORTED)
     set_target_properties(onnx::libonnx_proto PROPERTIES
             INTERFACE_INCLUDE_DIRECTORIES ${ONNX_PROTO_INCLUDE_DIR}

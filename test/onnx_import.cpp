@@ -983,7 +983,7 @@ TEST(onnx, model_shape)
 
     std::vector<std::vector<int64_t>> outputs =
         execute<float, int64_t>(function, inputs, "INTERPRETER");
-    EXPECT_TRUE(test::all_close(expected_output.front(), outputs.front()));
+    EXPECT_EQ(expected_output.front(), outputs.front());
 }
 
 TEST(onnx, model_elu)

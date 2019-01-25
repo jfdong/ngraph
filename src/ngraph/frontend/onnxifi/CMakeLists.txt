@@ -29,6 +29,10 @@ target_link_libraries(onnxifi-ngraph PRIVATE ngraph)
 add_dependencies(onnxifi-ngraph onnx::libonnx)
 target_include_directories(onnxifi-ngraph SYSTEM PRIVATE ${ONNX_INCLUDE_DIR} ${ONNX_IMPORT_INCLUDE_DIR})
 
+if (MSVS)
+  target_compile_definitions(onnxifi-ngraph PRIVATE ONNXIFI_BUILD_LIBRARY)
+endif()
+
 set(ONNXIFI_VERSION ${NGRAPH_VERSION})
 set(ONNXIFI_ABI_VERSION 1)
 

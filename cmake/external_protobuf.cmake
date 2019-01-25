@@ -24,55 +24,72 @@ include(ExternalProject)
 set(PROTOBUF_GIT_REPO_URL https://github.com/google/protobuf.git)
 set(PROTOBUF_GIT_BRANCH origin/3.5.x)
 
-# The 'BUILD_BYPRODUCTS' arguments was introduced in CMake 3.2.
-if (${CMAKE_VERSION} VERSION_LESS 3.2)
-    ExternalProject_Add(
-        ext_protobuf
-        PREFIX protobuf
-        GIT_REPOSITORY ${PROTOBUF_GIT_REPO_URL}
-        GIT_TAG ${PROTOBUF_GIT_BRANCH}
-        INSTALL_COMMAND ""
-        UPDATE_COMMAND ""
-        PATCH_COMMAND ""
-        CONFIGURE_COMMAND ./autogen.sh && ./configure --disable-shared CXXFLAGS=-fPIC
-        BUILD_COMMAND ${MAKE}
-        TMP_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/tmp"
-        STAMP_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/stamp"
-        DOWNLOAD_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/download"
-        SOURCE_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/src"
-        BINARY_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/src"
-        INSTALL_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf"
-        EXCLUDE_FROM_ALL TRUE
-        )
-else()
+# Use cmake to build protobuf with MSVC on Windows.
+# Use configure/make to build on Linux.
+if (WIN32)
+    # To speed things up prefer 'shallow copy' for CMake 3.6 and later
     if (${CMAKE_VERSION} VERSION_LESS 3.6)
         ExternalProject_Add(
             ext_protobuf
             PREFIX ext_protobuf
             GIT_REPOSITORY ${PROTOBUF_GIT_REPO_URL}
             GIT_TAG ${PROTOBUF_GIT_BRANCH}
-            INSTALL_COMMAND ""
             UPDATE_COMMAND ""
             PATCH_COMMAND ""
-            CONFIGURE_COMMAND ./autogen.sh && ./configure --disable-shared CXXFLAGS=-fPIC
-            BUILD_COMMAND ${MAKE}
+            CONFIGURE_COMMAND
+            CMAKE_GENERATOR ${CMAKE_GENERATOR}
+            CMAKE_GENERATOR_PLATFORM ${CMAKE_GENERATOR_PLATFORM}
+            CMAKE_GENERATOR_TOOLSET ${CMAKE_GENERATOR_TOOLSET}
+            CMAKE_ARGS
+                ${NGRAPH_FORWARD_CMAKE_ARGS}
+                -Dprotobuf_BUILD_SHARED_LIBS=ON
+                -Dprotobuf_BUILD_TESTS=OFF
+                -DCMAKE_INSTALL_PREFIX=${EXTERNAL_PROJECTS_ROOT}/protobuf
             TMP_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/tmp"
             STAMP_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/stamp"
             DOWNLOAD_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/download"
             SOURCE_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/src"
-            BINARY_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/src"
+            SOURCE_SUBDIR "cmake"
+            BINARY_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/build"
             INSTALL_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf"
-            BUILD_BYPRODUCTS "${EXTERNAL_PROJECTS_ROOT}/protobuf/src/src/.libs/libprotobuf.a"
             EXCLUDE_FROM_ALL TRUE
-            )
-    else()
-        # To speed things up prefer 'shallow copy' for CMake 3.6 and later
+        )
+    else ()
         ExternalProject_Add(
             ext_protobuf
             PREFIX ext_protobuf
             GIT_REPOSITORY ${PROTOBUF_GIT_REPO_URL}
             GIT_TAG ${PROTOBUF_GIT_BRANCH}
             GIT_SHALLOW TRUE
+            UPDATE_COMMAND ""
+            PATCH_COMMAND ""
+            CONFIGURE_COMMAND
+            CMAKE_GENERATOR ${CMAKE_GENERATOR}
+            CMAKE_GENERATOR_PLATFORM ${CMAKE_GENERATOR_PLATFORM}
+            CMAKE_GENERATOR_TOOLSET ${CMAKE_GENERATOR_TOOLSET}
+            CMAKE_ARGS
+                ${NGRAPH_FORWARD_CMAKE_ARGS}
+                -Dprotobuf_BUILD_SHARED_LIBS=ON
+                -Dprotobuf_BUILD_TESTS=OFF
+                -DCMAKE_INSTALL_PREFIX=${EXTERNAL_PROJECTS_ROOT}/protobuf
+            TMP_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/tmp"
+            STAMP_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/stamp"
+            DOWNLOAD_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/download"
+            SOURCE_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/src"
+            SOURCE_SUBDIR "cmake"
+            BINARY_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/build"
+            INSTALL_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf"
+            EXCLUDE_FROM_ALL TRUE
+        )
+    endif()
+else ()
+    # The 'BUILD_BYPRODUCTS' arguments was introduced in CMake 3.2.
+    if (${CMAKE_VERSION} VERSION_LESS 3.2)
+        ExternalProject_Add(
+            ext_protobuf
+            PREFIX protobuf
+            GIT_REPOSITORY ${PROTOBUF_GIT_REPO_URL}
+            GIT_TAG ${PROTOBUF_GIT_BRANCH}
             INSTALL_COMMAND ""
             UPDATE_COMMAND ""
             PATCH_COMMAND ""
@@ -84,12 +101,54 @@ else()
             SOURCE_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/src"
             BINARY_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/src"
             INSTALL_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf"
-            BUILD_BYPRODUCTS "${EXTERNAL_PROJECTS_ROOT}/protobuf/src/src/.libs/libprotobuf.a"
             EXCLUDE_FROM_ALL TRUE
             )
+    else()
+        if (${CMAKE_VERSION} VERSION_LESS 3.6)
+            ExternalProject_Add(
+                ext_protobuf
+                PREFIX ext_protobuf
+                GIT_REPOSITORY ${PROTOBUF_GIT_REPO_URL}
+                GIT_TAG ${PROTOBUF_GIT_BRANCH}
+                INSTALL_COMMAND ""
+                UPDATE_COMMAND ""
+                PATCH_COMMAND ""
+                CONFIGURE_COMMAND ./autogen.sh && ./configure --disable-shared CXXFLAGS=-fPIC
+                BUILD_COMMAND ${MAKE}
+                TMP_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/tmp"
+                STAMP_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/stamp"
+                DOWNLOAD_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/download"
+                SOURCE_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/src"
+                BINARY_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/src"
+                INSTALL_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf"
+                BUILD_BYPRODUCTS "${EXTERNAL_PROJECTS_ROOT}/protobuf/src/src/.libs/libprotobuf.a"
+                EXCLUDE_FROM_ALL TRUE
+                )
+        else()
+            # To speed things up prefer 'shallow copy' for CMake 3.6 and later
+            ExternalProject_Add(
+                ext_protobuf
+                PREFIX ext_protobuf
+                GIT_REPOSITORY ${PROTOBUF_GIT_REPO_URL}
+                GIT_TAG ${PROTOBUF_GIT_BRANCH}
+                GIT_SHALLOW TRUE
+                INSTALL_COMMAND ""
+                UPDATE_COMMAND ""
+                PATCH_COMMAND ""
+                CONFIGURE_COMMAND ./autogen.sh && ./configure --disable-shared CXXFLAGS=-fPIC
+                BUILD_COMMAND ${MAKE}
+                TMP_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/tmp"
+                STAMP_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/stamp"
+                DOWNLOAD_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/download"
+                SOURCE_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/src"
+                BINARY_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf/src"
+                INSTALL_DIR "${EXTERNAL_PROJECTS_ROOT}/protobuf"
+                BUILD_BYPRODUCTS "${EXTERNAL_PROJECTS_ROOT}/protobuf/src/src/.libs/libprotobuf.a"
+                EXCLUDE_FROM_ALL TRUE
+                )
+        endif()
     endif()
 endif()
-
 # -----------------------------------------------------------------------------
 
 ExternalProject_Get_Property(ext_protobuf SOURCE_DIR BINARY_DIR)
@@ -100,9 +159,15 @@ ExternalProject_Get_Property(ext_protobuf SOURCE_DIR BINARY_DIR)
 
 set(Protobuf_SRC_ROOT_FOLDER ${SOURCE_DIR})
 
-set(Protobuf_PROTOC_EXECUTABLE ${Protobuf_SRC_ROOT_FOLDER}/src/protoc)
-set(Protobuf_INCLUDE_DIR ${Protobuf_SRC_ROOT_FOLDER}/src)
-set(Protobuf_LIBRARY ${Protobuf_SRC_ROOT_FOLDER}/src/.libs/libprotobuf.a)
+if (WIN32)
+    set(Protobuf_PROTOC_EXECUTABLE ${EXTERNAL_PROJECTS_ROOT}/protobuf/bin/protoc)
+    set(Protobuf_INCLUDE_DIR ${EXTERNAL_PROJECTS_ROOT}/protobuf/include)
+    set(Protobuf_LIBRARY ${BINARY_DIR}/${CMAKE_CFG_INTDIR}/libprotobuf.lib)
+else()
+    set(Protobuf_PROTOC_EXECUTABLE ${Protobuf_SRC_ROOT_FOLDER}/src/protoc)
+    set(Protobuf_INCLUDE_DIR ${Protobuf_SRC_ROOT_FOLDER}/src)
+    set(Protobuf_LIBRARY ${Protobuf_SRC_ROOT_FOLDER}/src/.libs/libprotobuf.a)
+endif()
 set(Protobuf_LIBRARIES ${Protobuf_LIBRARY})
 
 if (NOT TARGET protobuf::libprotobuf)
